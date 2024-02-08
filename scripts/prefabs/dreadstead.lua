@@ -75,9 +75,9 @@ local function CalcDapperness(inst, owner)
 	local insanity = owner.components.sanity ~= nil and owner.components.sanity:IsInsanityMode()
 	local dreadhat = GetSetBonusEquip(inst, owner)
 	if dreadhat ~= nil then
-		return insanity and inst.regentask ~= nil and -TUNING.DREADSTEAD_SETBONUS_SANITYDRAIN_REPAIR or -TUNING.DREADSTEAD_SANITYDRAIN
+		return insanity and inst.regentask ~= nil and -TUNING.ILASKUS_WEAPON.DREADSTEAD.SETBONUS_SANITY_DRAIN_REPAIR or -TUNING.ILASKUS_WEAPON.DREADSTEAD.SANITY_DRAIN
 	end
-	return insanity and inst.regentask ~= nil and -TUNING.DREADSTEAD_SANITYDRAIN_REPAIR or -TUNING.DREADSTEAD_SANITYDRAIN
+	return insanity and inst.regentask ~= nil and -TUNING.ILASKUS_WEAPON.DREADSTEAD.SANITY_DRAIN_REPAIR or -TUNING.ILASKUS_WEAPON.DREADSTEAD.SANITY_DRAIN
 end
 
 -------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ local function fn()
     end
 
     inst:AddComponent("weapon")
-    inst.components.weapon:SetDamage(TUNING.DREADSTEAD_DAMAGE)
+    inst.components.weapon:SetDamage(TUNING.ILASKUS_WEAPON.DREADSTEAD.DAMAGE)
 	inst.components.weapon:SetOnAttack(OnAttack)
 
     -------
@@ -127,8 +127,8 @@ local function fn()
 	inst.components.inventoryitem.imagename = "perkportablecookpot"
 
     inst:AddComponent("finiteuses")
-    inst.components.finiteuses:SetMaxUses(TUNING.DREADSTEAD_DURABILITY)
-    inst.components.finiteuses:SetUses(TUNING.DREADSTEAD_DURABILITY)
+    inst.components.finiteuses:SetMaxUses(TUNING.ILASKUS_WEAPON.DREADSTEAD.DURABILITY)
+    inst.components.finiteuses:SetUses(TUNING.ILASKUS_WEAPON.DREADSTEAD.DURABILITY)
     inst.components.finiteuses:SetOnFinished(function()
 		local owner = inst.components.inventoryitem:GetGrandOwner()
 		local revert = SpawnPrefab("pointstead")

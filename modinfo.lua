@@ -13,6 +13,8 @@ api_version = 10
 -- Compatible with Don't Starve Together
 dst_compatible = true
 
+forge_compatible = true
+
 -- Not compatible with Don't Starve
 dont_starve_compatible = false
 reign_of_giants_compatible = false

@@ -18,7 +18,7 @@ local function SetBuffEnabled(inst, enabled, owner)
 		if not inst._bonusenabled then
 			inst._bonusenabled = true
 			owner._bonusenabled = true
-			inst.components.planardamage:AddBonus(inst, TUNING.BRIGHTSTEAD_SETBONUS_PLANAR_DAMAGE, "setbonus")
+			inst.components.planardamage:AddBonus(inst, TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.SETBONUS_PLANAR_DAMAGE, "setbonus")
 		end
 	elseif inst._bonusenabled then
 		inst._bonusenabled = nil
@@ -89,13 +89,13 @@ local function buff_OnExtended(inst)
 	if inst.decaytimer ~= nil then
 		inst.decaytimer:Cancel()
 	end
-	inst.decaytimer = inst:DoTaskInTime(TUNING.BRIGHTSTEAD_DEBUFF_DURATION, function() inst.components.debuff:Stop() end)
+	inst.decaytimer = inst:DoTaskInTime(TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.DEBUFF_DURATION, function() inst.components.debuff:Stop() end)
 	-- inst.AnimState:PushAnimation(RandomDebuffAnim(), true)
 end
 
 local function buff_OnAttached(inst, target)
 	if target ~= nil and target:IsValid() and not target.inlimbo and target.components.combat ~= nil and target.components.health ~= nil and not target.components.health:IsDead() then
-		target.components.combat.externaldamagemultipliers:SetModifier(inst, 1 - TUNING.BRIGHTSTEAD_DEBUFF_STRENGTH)
+		target.components.combat.externaldamagemultipliers:SetModifier(inst, 1 - TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.DEBUFF_STRENGTH)
 
 		-- Debuff FX
 		inst.entity:SetParent(target.entity)
@@ -164,14 +164,14 @@ local function fn()
     end
 
 	local planardamage = inst:AddComponent("planardamage")
-	planardamage:SetBaseDamage(TUNING.BRIGHTSTEAD_PLANAR_DAMAGE)
+	planardamage:SetBaseDamage(TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.PLANAR_DAMAGE)
 
 	local damagetypebonus = inst:AddComponent("damagetypebonus")
 	damagetypebonus:AddBonus("shadow_aligned", inst, TUNING.WEAPONS_LUNARPLANT_VS_SHADOW_BONUS)
 
     inst:AddComponent("weapon")
 	inst:AddComponent("debuffable")
-    inst.components.weapon:SetDamage(TUNING.BRIGHTSTEAD_DAMAGE)
+    inst.components.weapon:SetDamage(TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.DAMAGE)
 	inst.components.weapon:SetOnAttack(OnAttack)
 
     -------
@@ -183,8 +183,8 @@ local function fn()
 	inst.components.inventoryitem.imagename = "perkportablecookpot"
 
     inst:AddComponent("finiteuses")
-    inst.components.finiteuses:SetMaxUses(TUNING.BRIGHTSTEAD_DURABILITY)
-    inst.components.finiteuses:SetUses(TUNING.BRIGHTSTEAD_DURABILITY)
+    inst.components.finiteuses:SetMaxUses(TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.DURABILITY)
+    inst.components.finiteuses:SetUses(TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.DURABILITY)
     inst.components.finiteuses:SetOnFinished(function()
 		local owner = inst.components.inventoryitem:GetGrandOwner()
 		local revert = SpawnPrefab("pointstead")

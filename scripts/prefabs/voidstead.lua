@@ -46,7 +46,7 @@ local function SetBuffEnabled(inst, enabled, owner)
 		if not inst._bonusenabled then
 			inst._bonusenabled = true
 			owner._bonusenabled = true
-			inst.components.planardamage:AddBonus(inst, TUNING.VOIDSTEAD_SETBONUS_PLANAR_DAMAGE, "setbonus")
+			inst.components.planardamage:AddBonus(inst, TUNING.ILASKUS_WEAPON.VOIDSTEAD.SETBONUS_PLANAR_DAMAGE, "setbonus")
 		end
 	elseif inst._bonusenabled then
 		inst._bonusenabled = nil
@@ -116,7 +116,7 @@ local function onGroundTalking(inst, str_list)
 		if inst._classified ~= nil then
 			inst._classified:Say(str_list, math.random(#str_list))
 
-			local talkinterval = math.random(TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MIN_GROUND, TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MAX_GROUND)
+			local talkinterval = math.random(TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.ground.MIN, TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.ground.MAX)
 			inst.groundtalktask = inst:DoTaskInTime(talkinterval, onGroundTalking, STRINGS.VOIDSTEAD_QUOTES.on_ground)
 		end
 	end
@@ -130,7 +130,7 @@ local function onPickedUpTalkTaskReset(inst)
 end
 
 local function onDroppedTalkTask(inst)
-	local talkinterval = math.random(TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MIN_GROUND, TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MAX_GROUND)
+	local talkinterval = math.random(TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.ground.MIN, TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.ground.MAX)
 	inst.groundtalktask = inst:DoTaskInTime(talkinterval, onGroundTalking, STRINGS.VOIDSTEAD_QUOTES.on_ground)
 end
 
@@ -143,7 +143,7 @@ local function SayRandomLine(inst, str_list, owner)
             inst.talktask = nil
         end
 
-		local talkinterval = math.random(TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MIN, TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MAX)
+		local talkinterval = math.random(TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.onhand.MIN, TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.onhand.MAX)
         inst.talktask = inst:DoTaskInTime(talkinterval, SayRandomLine, STRINGS.VOIDSTEAD_QUOTES.overtime, owner)
     end
 end
@@ -156,7 +156,7 @@ local function ToggleTalking(inst, turnon, owner)
 
     if turnon then
         inst._classified:SetTarget(owner)
-        inst.talktask = inst:DoTaskInTime(TUNING.VOIDSTEAD_TALK_INITIAL_INTERVAL, SayRandomLine, STRINGS.VOIDSTEAD_QUOTES.overtime, owner)
+        inst.talktask = inst:DoTaskInTime(TUNING.ILASKUS_WEAPON.VOIDSTEAD.TALK_INTERVAL.onhand.INITIAL, SayRandomLine, STRINGS.VOIDSTEAD_QUOTES.overtime, owner)
     end
 end
 
@@ -190,12 +190,12 @@ local function buff_OnExtended(inst)
 	if inst.decaytimer ~= nil then
 		inst.decaytimer:Cancel()
 	end
-	inst.decaytimer = inst:DoTaskInTime(TUNING.VOIDSTEAD_DEBUFF_DURATION, function() inst.components.debuff:Stop() end)
+	inst.decaytimer = inst:DoTaskInTime(TUNING.ILASKUS_WEAPON.VOIDSTEAD.DEBUFF_DURATION, function() inst.components.debuff:Stop() end)
 end
 
 local function buff_OnAttached(inst, target)
 	if target ~= nil and target:IsValid() and not target.inlimbo and target.components.combat ~= nil and target.components.health ~= nil and not target.components.health:IsDead() then
-		target.components.combat.externaldamagetakenmultipliers:SetModifier(inst, 1 + TUNING.VOIDSTEAD_DEBUFF_STRENGTH)
+		target.components.combat.externaldamagetakenmultipliers:SetModifier(inst, 1 + TUNING.ILASKUS_WEAPON.VOIDSTEAD.DEBUFF_STRENGTH)
 
         -- Debuff FX
 		inst.entity:SetParent(target.entity)
@@ -211,7 +211,7 @@ local function buff_OnAttached(inst, target)
             inst.AnimState:PlayAnimation("debuff_pre_"..inst.size)
             inst.AnimState:PushAnimation("debuff_loop_"..inst.size)
         end
-        
+
         -- OnApply FX
 		local fx = SpawnPrefab("voidstead_debuff_onapply")
 		fx.entity:SetParent(target.entity)
@@ -309,14 +309,14 @@ local function fn()
     inst._classified:SetTarget(nil)
 
 	local planardamage = inst:AddComponent("planardamage")
-	planardamage:SetBaseDamage(TUNING.VOIDSTEAD_PLANAR_DAMAGE)
+	planardamage:SetBaseDamage(TUNING.ILASKUS_WEAPON.VOIDSTEAD.PLANAR_DAMAGE)
 
 	local damagetypebonus = inst:AddComponent("damagetypebonus")
     damagetypebonus:AddBonus("lunar_aligned", inst, TUNING.WEAPONS_VOIDCLOTH_VS_LUNAR_BONUS)
 
     inst:AddComponent("weapon")
 	inst:AddComponent("debuffable")
-    inst.components.weapon:SetDamage(TUNING.VOIDSTEAD_DAMAGE)
+    inst.components.weapon:SetDamage(TUNING.ILASKUS_WEAPON.VOIDSTEAD.DAMAGE)
 	inst.components.weapon:SetOnAttack(OnAttack)
 
     -------
@@ -331,8 +331,8 @@ local function fn()
 	inst.components.inventoryitem.imagename = "perkportablecookpot"
 
     inst:AddComponent("finiteuses")
-    inst.components.finiteuses:SetMaxUses(TUNING.VOIDSTEAD_DURABILITY)
-    inst.components.finiteuses:SetUses(TUNING.VOIDSTEAD_DURABILITY)
+    inst.components.finiteuses:SetMaxUses(TUNING.ILASKUS_WEAPON.VOIDSTEAD.DURABILITY)
+    inst.components.finiteuses:SetUses(TUNING.ILASKUS_WEAPON.VOIDSTEAD.DURABILITY)
     inst.components.finiteuses:SetOnFinished(function()
 		local owner = inst.components.inventoryitem:GetGrandOwner()
 		local revert = SpawnPrefab("pointstead")

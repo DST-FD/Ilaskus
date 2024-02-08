@@ -5,7 +5,9 @@ PrefabFiles = {
     "dreadstead",
     "brightstead",
     "voidstead",
-    "voidstead_classified"
+    "voidstead_classified",
+    "glassknife",
+    "glassknife_planar",
 }
 
 ------------------------------------------------------------------------------------
@@ -45,8 +47,6 @@ Assets = {
     Asset("IMAGE", "images/inventoryimages/perkportablecookpot.tex"),
 }
 
-------------------------------------------------------------------------------------
-
 -- ================ Initialize ====================
 
 AddMinimapAtlas("images/map_icons/ilaskus.xml")
@@ -66,91 +66,242 @@ local EventHandler = GLOBAL.EventHandler
 local FRAMES = GLOBAL.FRAMES
 local COLLISION = GLOBAL.COLLISION
 local debug = GLOBAL.debug
+local TheNet = GLOBAL.TheNet
+
+if TheNet:GetServerGameMode() == "lavaarena" then
+    table.insert(PrefabFiles, "lavaarena_pointstead")
+end
 
 -- ================ Tuning Stats and Values ====================
--- Basic Stat
-TUNING.ILASKUS_HEALTH = 150
-TUNING.ILASKUS_HUNGER = 130
-TUNING.ILASKUS_SANITY = 120
+TUNING.ILASKUS_STAT = {
+    -- Basic Stat
+    HEALTH = 150,
+    HUNGER = 130,
+    SANITY = 120,
+
+    -- Sanity Cost multiplier
+    SANITY_MODIFIER = {
+        STAFFSANITY = 2,                        -- x2 sanity cost when casting
+    },
+
+    -- Temperature related
+    TEMPERATURE = {
+        WINTER_INSULATION = TUNING.INSULATION_TINY,
+        FREEZING_TEMP = 5,
+        OVERHEAT_TEMP = 75,
+    }
+}
+
+-- Custom starting inventory
+TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.ILASKUS = {
+	"flint",
+	"flint",
+	"twigs",
+	"twigs",
+}
 
 -- Damage Scaling with Health
-TUNING.ILASKUS_DAMAGE_THRESHOLD_HIGH = 0.5      -- 50% health for HIGH
-TUNING.ILASKUS_DAMAGE_MULTIPLIER_HIGH = 1.1     -- +10% damage for HIGH
-TUNING.ILASKUS_DAMAGE_THRESHOLD_LOW = 0.15      -- 15% health for LOW
-TUNING.ILASKUS_DAMAGE_MULTIPLIER_LOW = 1.33     -- +33% damage for LOW
+TUNING.ILASKUS_DAMAGE = {
+    HIGH = {
+        THRESHOLD = 0.5,                        -- 50% health for HIGH
+        MULTIPLIER = 1.1,                       -- +10% damage for HIGH
+    },
+    LOW = {
+        THRESHOLD = 0.15,                       -- 15% health for LOW
+        MULTIPLIER = 1.33,                      -- +33% damage for LOW
+    }
+}
 
 -- Sanity Penalty with Certain Foods
-TUNING.ILASKUS_FOOD_PENALTY = 5                 -- Sanity -5 per food
-TUNING.ILASKUS_FOOD_PENALTY_TYPE = FOODTYPE.VEGGIE
-TUNING.ILASKUS_FOOD_EXCEPTION_TYPE = FOODTYPE.BERRY
+TUNING.ILASKUS_FOOD = {
+    SANITY_PENALTY = 5,
 
-TUNING.ILASKUS_FOOD_EXCEPTION_LIST = {
-    -- Veggie group
-    corn = true, potato = true, pumpkin = true,
-    butterflywings = true, moonbutterflywings = true, kelp_dried = true,
-    mashedpotatoes = true, potatotornado = true, potatosouffle = true,
-    butterflymuffin = true, pumpkincookie = true, waffles = true,
-    -- Fruits group
-    cave_banana = true, dragonfruit = true, pomegranate = true, watermelon = true,
-    wormlight = true, wormlight_lesser = true, glowberrymousse = true, rock_avocado_fruit_ripe = true,
-    jammypreserves = true, fruitmedley = true, trailmix = true, bananajuice = true, vegstinger = true, bananapop = true,
-    dragonpie = true, watermelonicle = true, figatoni = true, freshfruitcrepes = true, gazpacho = true, nightmarepie = true,
-    -- Candies
-    winter_food4 = true, winter_food6 = true, winter_food7 = true, carnivalfood_corntea = true,
-    halloweencandy_3 = true, halloweencandy_6 = true, halloweencandy_7 = true, halloweencandy_14 = true,
-}
-TUNING.ILASKUS_FOOD_HATE_LIST = {
-    ratatouille = { sanity = -25 },
-    leafymeatburger = { sanity = -TUNING.ILASKUS_FOOD_PENALTY },
-    meatysalad = { sanity = -TUNING.ILASKUS_FOOD_PENALTY },
+    TYPE = {
+        PENALTY = FOODTYPE.VEGGIE,
+        EXCEPTION = FOODTYPE.BERRY
+    },
+
+    LIST = {
+        PENALTY = {
+            ratatouille = { sanity = -25 },
+            leafymeatburger = { sanity = -5 },
+            meatysalad = { sanity = -5 },
+        },
+        EXCEPTION = {
+            -- Veggie group
+            corn = true, potato = true, pumpkin = true,
+            butterflywings = true, moonbutterflywings = true, kelp_dried = true,
+            mashedpotatoes = true, potatotornado = true, potatosouffle = true,
+            butterflymuffin = true, pumpkincookie = true, waffles = true,
+            -- Fruits group
+            cave_banana = true, dragonfruit = true, pomegranate = true, watermelon = true,
+            wormlight = true, wormlight_lesser = true, glowberrymousse = true, rock_avocado_fruit_ripe = true,
+            jammypreserves = true, fruitmedley = true, trailmix = true, bananajuice = true, vegstinger = true, bananapop = true,
+            dragonpie = true, watermelonicle = true, figatoni = true, freshfruitcrepes = true, gazpacho = true, nightmarepie = true,
+            -- Candies
+            winter_food4 = true, winter_food6 = true, winter_food7 = true, carnivalfood_corntea = true,
+            halloweencandy_3 = true, halloweencandy_6 = true, halloweencandy_7 = true, halloweencandy_14 = true,
+        }
+    }
 }
 
 -- Second Chance Perk
-TUNING.ILASKUS_SECOND_CHANCE_THRESHOLD = 100
-TUNING.ILASKUS_SECOND_CHANCE_COOLDOWN = TUNING.TOTAL_DAY_TIME    -- 8 minutes
-TUNING.ILASKUS_SECOND_CHANCE_IFRAME = 3
+TUNING.ILASKUS_SECOND_CHANCE = {
+    THRESHOLD = 100,
+    COOLDOWN = TUNING.TOTAL_DAY_TIME,    -- 8 minutes (480)
+    IFRAME = 3,
+    HEAL = 25,
+}
 
--- Weapon: Pointstead   
-TUNING.POINTSTEAD_DAMAGE = 42.5
-TUNING.POINTSTEAD_DURABILITY = GetModConfigData("POINTSTEAD_DURAB") and 0 or 200
+TUNING.ILASKUS_WEAPON = {
+    -- Weapon: Pointstead   
+    POINTSTEAD = {
+        DAMAGE = 42.5,
+        DURABILITY = GetModConfigData("POINTSTEAD_DURAB") and 0 or 200,
 
--- Weapon: Dreadstead   
-TUNING.DREADSTEAD_DAMAGE = 59.5
-TUNING.DREADSTEAD_DURABILITY = 200
+        RECIPE = {
+            Ingredient("flint", 4),
+            Ingredient("livinglog", 4),
+            Ingredient("goldnugget", 1)
+        },
+        TECH = TECH.SCIENCE_TWO,
+    },
+    -- Weapon: Dreadstead   
+    DREADSTEAD = {
+        DAMAGE = 59.5,
+        DURABILITY = 200,
 
-TUNING.DREADSTEAD_SANITYDRAIN = (20/3) / (TUNING.SEG_TIME * 2)  -- 6.6 / min
-TUNING.DREADSTEAD_SANITYDRAIN_REPAIR = 15 / (TUNING.SEG_TIME * 2)  -- 15 / min
-TUNING.DREADSTEAD_SETBONUS_SANITYDRAIN_REPAIR = 10 / (TUNING.SEG_TIME * 2)  -- 10 / min
+        SANITY_DRAIN = (20/3) / (TUNING.SEG_TIME * 2),              -- 6.6 / min
+        SANITY_DRAIN_REPAIR = 15 / (TUNING.SEG_TIME * 2),           -- 15 / min
+        SETBONUS_SANITY_DRAIN_REPAIR = 10 / (TUNING.SEG_TIME * 2),  -- 10 / min
 
--- Weapon: Voidstead   
-TUNING.VOIDSTEAD_DAMAGE = 42.5
-TUNING.VOIDSTEAD_PLANAR_DAMAGE = 15
-TUNING.VOIDSTEAD_SETBONUS_PLANAR_DAMAGE = 15
-TUNING.VOIDSTEAD_DURABILITY = 300
+        RECIPE = {
+            Ingredient("dreadstone", 4),
+            Ingredient("horrorfuel", 2),
+            Ingredient("pointstead", 1)
+        },
+        TECH = TECH.MAGIC_THREE,        -- Shadow Manipulator
+    },
+    -- Weapon: Voidstead
+    VOIDSTEAD = {
+        DAMAGE = 42.5,
+        PLANAR_DAMAGE = 15,
+        DURABILITY = 300,
 
-TUNING.VOIDSTEAD_DEBUFF_STRENGTH = 0.2
-TUNING.VOIDSTEAD_DEBUFF_DURATION = 3
+        DEBUFF_STRENGTH = 0.2,
+        DEBUFF_DURATION = 3,
 
-TUNING.VOIDSTEAD_TALK_INITIAL_INTERVAL = 5
-TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MIN = 30
-TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MAX = 120
-TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MIN_GROUND = 10
-TUNING.VOIDSTEAD_TALK_PERIODIC_INTERVAL_MAX_GROUND = 25
+        SETBONUS_PLANAR_DAMAGE = 15,
 
--- Weapon: Brightstead   
-TUNING.BRIGHTSTEAD_DAMAGE = 42.5
-TUNING.BRIGHTSTEAD_PLANAR_DAMAGE = 20
-TUNING.BRIGHTSTEAD_SETBONUS_PLANAR_DAMAGE = 15
-TUNING.BRIGHTSTEAD_DURABILITY = 300
+        TALK_INTERVAL = {
+            onhand = {
+                INITIAL = 5,
+                MIN = 30,
+                MAX = 120,
+            },
+            ground = {
+                MIN = 10,
+                MAX = 25,
+            }
+        },
 
-TUNING.BRIGHTSTEAD_DEBUFF_STRENGTH = 0.2
-TUNING.BRIGHTSTEAD_DEBUFF_DURATION = 3
+        RECIPE = {
+            Ingredient("voidcloth", 4),
+            Ingredient("horrorfuel", 4),
+            Ingredient("pointstead", 1)
+        },
+    },
+    -- Weapon: Brightstead
+    BRIGHTSTEAD = {
+        DAMAGE = 42.5,
+        PLANAR_DAMAGE = 20,
+        DURABILITY = 300,
+
+        DEBUFF_STRENGTH = 0.2,
+        DEBUFF_DURATION = 3,
+
+        SETBONUS_PLANAR_DAMAGE = 15,
+
+        RECIPE = {
+            Ingredient("purebrilliance", 4),
+            Ingredient("lunarplant_husk", 4),
+            Ingredient("pointstead", 1)
+        },
+    },
+    -- Weapon: Glassknife Physical
+    GLASSKNIFE = {
+        DAMAGE = 350,
+        USE = 1,
+        
+        RECIPE = {
+            Ingredient("moonglass", 12)
+        },
+    },
+    -- Weapon: Glassknife Planar
+    GLASSKNIFE_PLANAR = {
+        PLANAR_DAMAGE = 300,
+        USE = 1,
+        
+        RECIPE = {
+            Ingredient("moonglass_charged", 12)
+        },
+    },
+}
 
 -- Special Beefalo
-TUNING.ILASKUS_BEEFALO_NAME = "boof"
-TUNING.ILASKUS_BEEFALO_BUCK_TIME = 180
-TUNING.ILASKUS_BEEFALO_DOMESTICATION_MOD = GetModConfigData("BEEFALO_TAME_SPEED") and 1.3 or nil
+TUNING.ILASKUS_BEEFALO = {
+    NAME = "boof",
+    BUCK_TIME = 180,
+    DOMESTICATION_MOD = GetModConfigData("BEEFALO_TAME_SPEED") and 1.3 or nil
+}
 
+-- Forge Stuffs
+TUNING.ILASKUS_FORGE = {
+    HEALTH = 150,
+    WEAPON_NOACCESS = {"books","staves","darts", "healers"},     -- Go change in String by yourself if you change these
+    SECOND_CHANCE = {
+        THRESHOLD = 0.8,
+        COOLDOWN = 30,
+        IFRAME = 3,
+        HEAL = 25,
+    },
+}
+
+TUNING.LAVAARENA_SURVIVOR_DIFFICULTY.ILASKUS = 2
+TUNING.LAVAARENA_STARTING_HEALTH.ILASKUS = TUNING.ILASKUS_FORGE.HEALTH
+
+TUNING.GAMEMODE_STARTING_ITEMS.LAVAARENA.ILASKUS = {
+    "forginghammer",
+    "forge_woodarmor"
+}
+
+TUNING.ILASKUS_WEAPON_FORGE = {
+    LAVAARENA_POINTSTEAD = {
+        DAMAGE       = 25,
+		ALT_DAMAGE  = 25 * 2,
+		ALT_DIST    = 6.5,
+		ALT_WIDTH   = 2,-- TODO 3.25 was old value, why? 2 seems to fit better, but might be a little too big, 1.5 would make ALT_RANGE 8 hmmm
+		ALT_RANGE   = 6.5 + 2, -- ALT_DIST + ALT_WIDTH
+		ALT_STIMULI = "explosive",
+        COOLDOWN 	 = 18,
+        DAMAGE_TYPE  = 1, -- Physical
+        ITEM_TYPE    = "melees",
+        ENTITY_TYPE  = "WEAPONS",
+        ATTACK_RANGE = 5,
+        HIT_RANGE    = 10,
+        HIT_WEIGHT   = 0.5,
+        WEIGHT       = 3,
+        RET = {
+			PREFAB       = "reticuleline",
+			PING_PREFAB  = "reticulelineping",
+			TYPE         = "directional",
+			LENGTH       = 6.5,
+			ALWAYS_VALID = false,
+        },
+    }
+}
+
+-- ================ Finishing Up Before Adding Mod Character ====================
 -- Custom speech strings
 STRINGS.CHARACTERS.ILASKUS = require "speech_ilaskus"
 modimport("scripts/languages/en")
@@ -266,7 +417,7 @@ AddComponentPostInit('domesticatable', function(self)
         end
         if doer ~= nil and doer:HasTag("OtherworldlyDog") and inst:HasTag("OtherworldlyBoof") then
             print("BOOF domestication")
-            return delta * TUNING.ILASKUS_BEEFALO_DOMESTICATION_MOD
+            return delta * TUNING.ILASKUS_BEEFALO.DOMESTICATION_MOD
         end
 
         return delta
@@ -345,7 +496,7 @@ AddPrefabPostInit("beefalo", function(self)
     -- Add otherworldly boof / Prevent horny
     local old_OnNamedByWriteable = inst.components.writeable.onwritten
     local function OnNamedByWriteableNew(inst, new_name, writer)
-        if inst.components.named ~= nil and writer ~= nil and writer.userid and writer:HasTag("OtherworldlyDog") and new_name == TUNING.ILASKUS_BEEFALO_NAME then
+        if inst.components.named ~= nil and writer ~= nil and writer.userid and writer:HasTag("OtherworldlyDog") and new_name == TUNING.ILASKUS_BEEFALO.NAME then
             inst:AddTag("OtherworldlyBoof")
             inst.components.herdmember:Enable(false)
             print("Boof")
@@ -390,7 +541,7 @@ AddPrefabPostInit("beefalo", function(self)
             and TUNING.BEEFALO_BUCK_TIME_NUDE_MULT
             or 1
 
-        local basedelay = TUNING.ILASKUS_BEEFALO_BUCK_TIME
+        local basedelay = TUNING.ILASKUS_BEEFALO.BUCK_TIME
 
         -- print(basedelay * beardmult)
         return basedelay * beardmult
@@ -425,23 +576,23 @@ end)
 
 AddCharacterRecipe(
     "pointstead",
-    {Ingredient("flint", 4), Ingredient("livinglog", 4), Ingredient("goldnugget", 1)},
-    TECH.SCIENCE_TWO,
+    TUNING.ILASKUS_WEAPON.POINTSTEAD.RECIPE,
+    TUNING.ILASKUS_WEAPON.POINTSTEAD.TECH,
     {builder_tag = "OtherworldlyDog", product = "pointstead", --[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
     {"CHARACTER","WEAPONS"}
 )
 
 AddCharacterRecipe(
     "dreadstead",
-    {Ingredient("dreadstone", 4), Ingredient("horrorfuel", 2), Ingredient("pointstead", 1)},
-    TECH.MAGIC_THREE,
+    TUNING.ILASKUS_WEAPON.DREADSTEAD.RECIPE,
+    TUNING.ILASKUS_WEAPON.DREADSTEAD.TECH,
     {builder_tag = "OtherworldlyDog", product = "dreadstead", --[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
     {"CHARACTER","WEAPONS"}
 )
 
 AddCharacterRecipe(
     "brightstead",
-    {Ingredient("purebrilliance", 4), Ingredient("lunarplant_husk", 4), Ingredient("pointstead", 1)},
+    TUNING.ILASKUS_WEAPON.BRIGHTSTEAD.RECIPE,
     TECH.LUNARFORGING_TWO,
     {builder_tag = "OtherworldlyDog", product = "brightstead", nounlock=true, station_tag = "lunar_forge"--[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
     {"CHARACTER","CRAFTING_STATION","WEAPONS"}
@@ -449,9 +600,25 @@ AddCharacterRecipe(
 
 AddCharacterRecipe(
     "voidstead",
-    {Ingredient("voidcloth", 4), Ingredient("horrorfuel", 4), Ingredient("pointstead", 1)},
+    TUNING.ILASKUS_WEAPON.VOIDSTEAD.RECIPE,
     TECH.SHADOWFORGING_TWO,
     {builder_tag = "OtherworldlyDog", product = "voidstead", nounlock=true, station_tag = "shadow_forge"--[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
+    {"CHARACTER","CRAFTING_STATION","WEAPONS"}
+)
+
+AddCharacterRecipe(
+    "glassknife",
+    TUNING.ILASKUS_WEAPON.GLASSKNIFE.RECIPE,
+    TECH.CELESTIAL_THREE,
+    {builder_tag = "OtherworldlyDog", product = "glassknife", nounlock=true, --[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
+    {"CHARACTER","CRAFTING_STATION","WEAPONS"}
+)
+
+AddCharacterRecipe(
+    "glassknife_planar",
+    TUNING.ILASKUS_WEAPON.GLASSKNIFE_PLANAR.RECIPE,
+    TECH.CELESTIAL_THREE,
+    {builder_tag = "OtherworldlyDog", product = "glassknife_planar", nounlock=true, --[[atlas = "images/inventoryimages/ibcharrose.xml", image = "ibcharrose.tex"]]},
     {"CHARACTER","CRAFTING_STATION","WEAPONS"}
 )
 
@@ -633,7 +800,7 @@ AddStategraphState("wilson",
         {
             EventHandler("animover", function(inst)
                 if inst.AnimState:AnimDone() and inst.AnimState:IsCurrentAnimation("corpse_revive") then
-                    inst.components.talker:Say(STRINGS.ILASKUS_SECOND_CHANCE_LINES[math.random(#STRINGS.ILASKUS_SECOND_CHANCE_LINES)])
+                    inst.components.talker:Say(STRINGS.ILASKUS_QUOTES.SECOND_CHANCE[math.random(#STRINGS.ILASKUS_QUOTES.SECOND_CHANCE)])
                     inst.sg:GoToState("idle")
                 end
             end),
@@ -655,11 +822,23 @@ AddStategraphState("wilson",
                 inst.Physics:CollidesWith(COLLISION.GIANTS)
             end
 
-            inst:DoTaskInTime(TUNING.ILASKUS_SECOND_CHANCE_IFRAME, function()
+            local thresholdTuning = TUNING.ILASKUS_SECOND_CHANCE.THRESHOLD
+            local cooldown = TUNING.ILASKUS_SECOND_CHANCE.COOLDOWN
+            local iframe = TUNING.ILASKUS_SECOND_CHANCE.IFRAME
+            local health = TUNING.ILASKUS_STAT.HEALTH
+
+            local threshold
+            if thresholdTuning <= 1 then
+                -- Percent Based
+                threshold = inst.components.health:GetPercent() >= thresholdTuning
+            else
+                -- Amount Based
+                threshold = 1 + inst.components.health:GetPercent() >= (health + thresholdTuning) / health
+            end
+
+            inst:DoTaskInTime(iframe, function()
                 inst.components.health:SetInvincible(false)
-                inst.components.timer:StartTimer("secondchance", TUNING.ILASKUS_SECOND_CHANCE_COOLDOWN,
-                    {paused = 1 + inst.components.health:GetPercent() >= (TUNING.ILASKUS_HEALTH + TUNING.ILASKUS_SECOND_CHANCE_THRESHOLD) / TUNING.ILASKUS_HEALTH
-                    and false or true})
+                inst.components.timer:StartTimer("secondchance", cooldown, {isPause = threshold and false or true})
                 inst._onSecondChanceCooldown = true
                 if inst.sg.statemem.revivefx1 ~= nil then inst.sg.statemem.revivefx1:Remove() end
                 if inst.sg.statemem.revivefx2 ~= nil then inst.sg.statemem.revivefx2:Remove() end

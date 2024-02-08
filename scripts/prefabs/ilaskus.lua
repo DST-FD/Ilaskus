@@ -5,16 +5,6 @@ local assets = {
 }
 -----------------------------------------------------------------------------
 
--- Your character's stats
-
--- Custom starting inventory
-TUNING.GAMEMODE_STARTING_ITEMS.DEFAULT.ILASKUS = {
-	"flint",
-	"flint",
-	"twigs",
-	"twigs",
-}
-
 local start_inv = {}
 for k, v in pairs(TUNING.GAMEMODE_STARTING_ITEMS) do
     start_inv[string.lower(k)] = v.ILASKUS
@@ -41,22 +31,46 @@ local function onload(inst)
 
     if inst:HasTag("playerghost") then
         onbecameghost(inst)
+	elseif inst:HasTag("corpse") then
+		onbecameghost(inst)
     else
         onbecamehuman(inst)
     end
 end
 
+---------------------------------------------------------------------------------------------------
+--  Forge Break  --
+---------------------------------------------------------------------------------------------------
+local forge_fn = function(inst)
+	event_server_data("lavaarena", "prefabs/ilaskus").master_postinit(inst)
+	inst:AddComponent("corpsereviver")
+
+	local function perk_fn(inst)
+		-- For second chance calculation
+		TUNING.ILASKUS_SECOND_CHANCE.THRESHOLD = TUNING.ILASKUS_FORGE.SECOND_CHANCE.THRESHOLD
+		TUNING.ILASKUS_SECOND_CHANCE.COOLDOWN = TUNING.ILASKUS_FORGE.SECOND_CHANCE.COOLDOWN
+		TUNING.ILASKUS_SECOND_CHANCE.IFRAME = TUNING.ILASKUS_FORGE.SECOND_CHANCE.IFRAME
+		TUNING.ILASKUS_SECOND_CHANCE.HEAL = TUNING.ILASKUS_FORGE.SECOND_CHANCE.HEAL
+		TUNING.ILASKUS_STAT.HEALTH = TUNING.ILASKUS_FORGE.HEALTH
+
+		inst.components.health:SetMaxHealth(TUNING.ILASKUS_FORGE.HEALTH)
+		inst.components.itemtyperestrictions:SetRestrictions(TUNING.ILASKUS_FORGE.WEAPON_NOACCESS)
+
+	end
+	-- Gotta check this since it isn't work with current version
+	AddPerk("ilaskus", "otherworldly_dog", perk_fn, nil, nil, 0)
+end
 -----------------------------------------------------------------------------
 
 -- ================ Damage Scaling ====================
 
 local function HealthDamageScale(inst)
 	local health = inst.components.health:GetPercent()
-	if health <= TUNING.ILASKUS_DAMAGE_THRESHOLD_HIGH then
-		local multiplier = (TUNING.ILASKUS_DAMAGE_THRESHOLD_HIGH - health) / (TUNING.ILASKUS_DAMAGE_THRESHOLD_HIGH - TUNING.ILASKUS_DAMAGE_THRESHOLD_LOW)
-		local damageBoost = (TUNING.ILASKUS_DAMAGE_MULTIPLIER_LOW - TUNING.ILASKUS_DAMAGE_MULTIPLIER_HIGH) * multiplier
+	if health <= TUNING.ILASKUS_DAMAGE.HIGH.THRESHOLD then
+		local multiplier = (TUNING.ILASKUS_DAMAGE.HIGH.THRESHOLD - health) / (TUNING.ILASKUS_DAMAGE.HIGH.THRESHOLD - TUNING.ILASKUS_DAMAGE.LOW.THRESHOLD)
+		local damageBoost = (TUNING.ILASKUS_DAMAGE.LOW.MULTIPLIER - TUNING.ILASKUS_DAMAGE.HIGH.MULTIPLIER) * multiplier
 
-		inst.components.combat.damagemultiplier = (health <= TUNING.ILASKUS_DAMAGE_THRESHOLD_LOW) and TUNING.ILASKUS_DAMAGE_MULTIPLIER_LOW or TUNING.ILASKUS_DAMAGE_MULTIPLIER_HIGH + damageBoost
+		inst.components.combat.damagemultiplier = (health <= TUNING.ILASKUS_DAMAGE.LOW.THRESHOLD) and TUNING.ILASKUS_DAMAGE.LOW.MULTIPLIER or TUNING.ILASKUS_DAMAGE.HIGH.MULTIPLIER + damageBoost
 	else
 		inst.components.combat.damagemultiplier = 1
 	end
@@ -67,16 +81,16 @@ end
 -- ================ Food Penalties ====================
 
 -- Set hated food types
-local food_hated = TUNING.ILASKUS_FOOD_PENALTY_TYPE
-local food_exception_type = TUNING.ILASKUS_FOOD_EXCEPTION_TYPE
+local food_type_penalty = TUNING.ILASKUS_FOOD.TYPE.PENALTY
+local food_type_exception = TUNING.ILASKUS_FOOD.TYPE.EXCEPTION
 
 -- Make exception lists that doesn't give penalty
-local food_exception_list = TUNING.ILASKUS_FOOD_EXCEPTION_LIST
-local food_penalties_list =	TUNING.ILASKUS_FOOD_HATE_LIST
+local food_penalties_list =	TUNING.ILASKUS_FOOD.LIST.PENALTY
+local food_exception_list = TUNING.ILASKUS_FOOD.LIST.EXCEPTION
 
 -- Custom messages to speak when eating them
-local food_dislike_lines = STRINGS.ILASKUS_FOOD_DISLIKE_LINES
-local food_hated_lines = STRINGS.ILASKUS_FOOD_HATED_LINES
+local food_dislike_lines = STRINGS.ILASKUS_QUOTES.FOOD_DISLIKE
+local food_hated_lines = STRINGS.ILASKUS_QUOTES.FOOD_HATED
 
 -- OnEat function
 local function OnEat(inst, food)
@@ -96,15 +110,15 @@ local function OnEat(inst, food)
 	end
 
 	local isHateFood = food_penalties_list[ateFood]
-	local isPickyEat = foodType == food_hated or foodType2 == food_hated or isHateFood
+	local isPickyEat = (foodType == food_type_penalty) or (foodType2 == food_type_penalty) or isHateFood
 
 	if isPickyEat then
 		-- Check excluding / Check hate food / Give generic penalty
-		if (foodType2 == food_exception_type or food_exception_list[ateFood]) then
+		if (foodType2 == food_type_exception or food_exception_list[ateFood]) then
 			sanity:DoDelta(sanityTuning)
 
 		elseif isHateFood then
-			if isHateFood["sanity"] ~= -TUNING.ILASKUS_FOOD_PENALTY then
+			if isHateFood["sanity"] ~= -TUNING.ILASKUS_FOOD.SANITY_PENALTY then
 				inst.components.talker:Say(food_hated_lines)
 			else
 				inst.components.talker:Say(food_dislike_lines[math.random(#food_dislike_lines)])
@@ -114,10 +128,10 @@ local function OnEat(inst, food)
 		else
 			if (sanityTuning < 0) then
 				--For the already negative sanity food, decrease further
-				sanity:DoDelta(sanityTuning - TUNING.ILASKUS_FOOD_PENALTY)
+				sanity:DoDelta(sanityTuning - TUNING.ILASKUS_FOOD.SANITY_PENALTY)
 			else
 				--Replace it with generic penalty
-				sanity:DoDelta(-TUNING.ILASKUS_FOOD_PENALTY)
+				sanity:DoDelta(-TUNING.ILASKUS_FOOD.SANITY_PENALTY)
 			end
 			inst.components.talker:Say(food_dislike_lines[math.random(#food_dislike_lines)])
 		end
@@ -134,13 +148,23 @@ end
 local function OnTimerDone(inst, data)
     if data.name == "secondchance" then
 		inst._onSecondChanceCooldown = false
-		inst.components.talker:Say(STRINGS.ILASKUS_SECOND_CHANCE_ONFINISH)
+		inst.components.talker:Say(STRINGS.ILASKUS_QUOTES.SECOND_CHANCE_ONFINISH)
     end
 end
 
 local function OnSecondChancePause(inst)
 	local currenthealth = inst.components.health:GetPercent()
-	if 1 + currenthealth >= (TUNING.ILASKUS_HEALTH + TUNING.ILASKUS_SECOND_CHANCE_THRESHOLD) / TUNING.ILASKUS_HEALTH then
+	local thresholdTuning = TUNING.ILASKUS_SECOND_CHANCE.THRESHOLD
+	local threshold
+	if thresholdTuning <= 1 then
+		-- Percent Based
+		threshold = currenthealth >= thresholdTuning
+	else
+		-- Amount Based
+		threshold = 1 + currenthealth >= (TUNING.ILASKUS_STAT.HEALTH + thresholdTuning) / TUNING.ILASKUS_STAT.HEALTH
+	end
+
+	if threshold then
 		inst.components.timer:ResumeTimer("secondchance")
 	else
 		inst.components.timer:PauseTimer("secondchance")
@@ -149,7 +173,7 @@ end
 
 local function OnSecondChance(inst)
 	if not inst._onSecondChanceCooldown and inst.components.health.currenthealth <= 0 then
-		inst.components.health.currenthealth = 25
+		inst.components.health.currenthealth = TheNet:GetServerGameMode() == "lavaarena" and TUNING.ILASKUS_FORGE.SECOND_CHANCE.HEAL or TUNING.ILASKUS_SECOND_CHANCE.HEAL
 		inst.components.health:SetInvincible(true)
 
 		inst.sg:PushEvent("start_second_chance")
@@ -178,18 +202,22 @@ local master_postinit = function(inst)
     --inst.talker_path_override = "dontstarve_DLC001/characters/"
 
 	-- Main Stats
-	inst.components.health:SetMaxHealth(TUNING.ILASKUS_HEALTH)
-	inst.components.hunger:SetMax(TUNING.ILASKUS_HUNGER)
-	inst.components.sanity:SetMax(TUNING.ILASKUS_SANITY)
+	inst.components.health:SetMaxHealth(TUNING.ILASKUS_STAT.HEALTH)
+	inst.components.hunger:SetMax(TUNING.ILASKUS_STAT.HUNGER)
+	inst.components.sanity:SetMax(TUNING.ILASKUS_STAT.SANITY)
+
+	-- Sanity cost multiplier when casting spells
+    inst:AddComponent("staffsanity")
+	inst.components.staffsanity:SetMultiplier(TUNING.ILASKUS_STAT.SANITY_MODIFIER.STAFFSANITY)
 
 	-- Damage multiplier stuffs
     inst.components.combat.damagemultiplier = 1
 	inst:ListenForEvent("healthdelta", HealthDamageScale)
 
 	-- Temperature stuffs
-    inst.components.temperature.inherentinsulation = TUNING.INSULATION_TINY
-    inst.components.temperature.overheattemp = 75
-    inst.components.temperature.freezingtemp = 5
+    inst.components.temperature.inherentinsulation = TUNING.ILASKUS_STAT.TEMPERATURE.WINTER_INSULATION
+    inst.components.temperature.overheattemp = TUNING.ILASKUS_STAT.TEMPERATURE.OVERHEAT_TEMP
+    inst.components.temperature.freezingtemp = TUNING.ILASKUS_STAT.TEMPERATURE.FREEZING_TEMP
 
 	-- Hunger rate and food stuffs
 	inst.components.hunger.hungerrate = 1 * TUNING.WILSON_HUNGER_RATE
@@ -210,6 +238,7 @@ local master_postinit = function(inst)
 
 	inst.OnLoad = onload
     inst.OnNewSpawn = onload
+	inst.forge_fn = forge_fn
 
 end
 

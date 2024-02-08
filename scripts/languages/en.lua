@@ -7,25 +7,49 @@ STRINGS.CHARACTER_DESCRIPTIONS.ilaskus = "*Fights until collapse\n*Brings his ow
 STRINGS.CHARACTER_QUOTES.ilaskus = "\"Now just what does this world has to offer towards my journal?\""
 STRINGS.CHARACTER_SURVIVABILITY.ilaskus = "Grim"
 
+-- Forge (Just the Expertise Description)
+local forge_weapon_types = {"melees", "books", "staves", "darts", "healers"}
+local weapon_access = {}
+local canUse = ""
+
+for _,weapon_type in pairs(forge_weapon_types) do
+    local match = false
+    for _,disable_type in pairs(TUNING.ILASKUS_FORGE.WEAPON_NOACCESS) do
+        if weapon_type == disable_type then
+            match = true
+            break
+        end
+    end
+    if not match then table.insert(weapon_access, weapon_type) end
+end
+
+for index,weapon_type in pairs(weapon_access) do
+    canUse = canUse .. weapon_type:gsub("^%l", string.upper) .. (index == #weapon_access and "" or ", ")
+end
+
+STRINGS.LAVAARENA_CHARACTER_DESCRIPTIONS.ilaskus = "*Line 1\n*Line 2\n*Line 3\n\nExpertise:\n" .. canUse
+
 -- The character's name as appears in-game 
 STRINGS.NAMES.ILASKUS = "Ilaskus"
 STRINGS.SKIN_NAMES.ilaskus_none = "Ilaskus"
 
--- Character Perks
-STRINGS.ILASKUS_FOOD_DISLIKE_LINES = {
-    "That was horrendous to my taste buds.",
-    "Definitely not wanting that again any time soon.",
-    "Yeesh...",
-}
-STRINGS.ILASKUS_FOOD_HATED_LINES = "That was a nightmare to swallow..."
+-- Character Stuffs
+STRINGS.ILASKUS_QUOTES = {
+    FOOD_DISLIKE = {
+        "That was horrendous to my taste buds.",
+        "Definitely not wanting that again any time soon.",
+        "Yeesh...",
+    },
+    FOOD_HATED = "That was a nightmare to swallow...",
 
-STRINGS.ILASKUS_SECOND_CHANCE_LINES = {
-    "Not... today...",
-    "That was NOT my last breath!",
-    "H-hah... not yet!",
-}
-STRINGS.ILASKUS_SECOND_CHANCE_ONFINISH = "I'm pretty ready to take another beating."
+    SECOND_CHANCE = {
+        "Not... today...",
+        "That was NOT my last breath!",
+        "H-hah... not yet!",
+    },
+    SECOND_CHANCE_ONFINISH = "I'm pretty ready to take another beating.",
 
+}
 -- Prefabs (Weapons)
 STRINGS.NAMES.POINTSTEAD = "Pointstead"
 STRINGS.RECIPE_DESC.POINTSTEAD = "Your trusty blade, steadily stabs."
@@ -47,6 +71,27 @@ STRINGS.CHARACTERS.WURT.DESCRIBE.POINTSTEAD = "It sharp!"
 STRINGS.CHARACTERS.WALTER.DESCRIBE.POINTSTEAD = "Now I can cosplay as my favourite serial killer!"
 STRINGS.CHARACTERS.WANDA.DESCRIBE.POINTSTEAD = "Barely any efficiency. Not worth my time."
 STRINGS.CHARACTERS.ILASKUS.DESCRIBE.POINTSTEAD= "Honestly can't go wrong with my trusty weapon."
+
+STRINGS.NAMES.LAVAARENA_POINTSTEAD = "Pointstead"
+STRINGS.RECIPE_DESC.LAVAARENA_POINTSTEAD = "Your trusty blade, steadily stabs."
+STRINGS.CHARACTERS.GENERIC.DESCRIBE.LAVAARENA_POINTSTEAD = "A simple dagger made for combat."
+STRINGS.CHARACTERS.WILLOW.DESCRIBE.LAVAARENA_POINTSTEAD = "The weapon of choice for a pyromaniac, I like it!"
+STRINGS.CHARACTERS.WOLFGANG.DESCRIBE.LAVAARENA_POINTSTEAD = "Is little pointy toy."
+STRINGS.CHARACTERS.WENDY.DESCRIBE.LAVAARENA_POINTSTEAD = "A stab to the heart, plunge it deeply."
+STRINGS.CHARACTERS.WX78.DESCRIBE.LAVAARENA_POINTSTEAD = "STABBING DEVICE"
+STRINGS.CHARACTERS.WICKERBOTTOM.DESCRIBE.LAVAARENA_POINTSTEAD = "A dagger, mostly dull, I suppose you can stab with it."
+STRINGS.CHARACTERS.WOODIE.DESCRIBE.LAVAARENA_POINTSTEAD = "Not as sharp as Lucy."
+STRINGS.CHARACTERS.WAXWELL.DESCRIBE.LAVAARENA_POINTSTEAD = "I'm not really suited for close quarter combat."
+STRINGS.CHARACTERS.WATHGRITHR.DESCRIBE.LAVAARENA_POINTSTEAD = "Merely a weapon! An insult!"
+STRINGS.CHARACTERS.WEBBER.DESCRIBE.LAVAARENA_POINTSTEAD = "Mom always got upset when we played with those..."
+STRINGS.CHARACTERS.WINONA.DESCRIBE.LAVAARENA_POINTSTEAD = "Don't leave this lying around!"
+STRINGS.CHARACTERS.WARLY.DESCRIBE.LAVAARENA_POINTSTEAD = "Ah my kitchen knife... Ah non, nevermind."
+STRINGS.CHARACTERS.WORTOX.DESCRIBE.LAVAARENA_POINTSTEAD = "A stick with a pointy end, this will barely make a dent!"
+STRINGS.CHARACTERS.WORMWOOD.DESCRIBE.LAVAARENA_POINTSTEAD = "Stabby"
+STRINGS.CHARACTERS.WURT.DESCRIBE.LAVAARENA_POINTSTEAD = "It sharp!"
+STRINGS.CHARACTERS.WALTER.DESCRIBE.LAVAARENA_POINTSTEAD = "Now I can cosplay as my favourite serial killer!"
+STRINGS.CHARACTERS.WANDA.DESCRIBE.LAVAARENA_POINTSTEAD = "Barely any efficiency. Not worth my time."
+STRINGS.CHARACTERS.ILASKUS.DESCRIBE.LAVAARENA_POINTSTEAD= "Honestly can't go wrong with my trusty weapon."
 ------------------------------------------------------------------------------------
 STRINGS.NAMES.DREADSTEAD = "Dreadstead"
 STRINGS.RECIPE_DESC.DREADSTEAD = "Give your foes the horror of being cut."
